@@ -1,0 +1,650 @@
+/**
+ * 微信语音消息 - CSS 样式
+ */
+
+:root {
+    --voice-green: #07c160;
+    --voice-green-dark: #06ad56;
+    --voice-green-light: #e8f5e9;
+    --voice-red: #e84040;
+    --voice-red-dark: #d32f2f;
+    --voice-bg: #f0f0f0;
+    --voice-bg-hover: #e4e4e4;
+    --voice-radius: 18px;
+    --voice-shadow: 0 2px 8px rgba(7, 193, 96, 0.25);
+    --voice-shadow-hover: 0 4px 12px rgba(7, 193, 96, 0.35);
+    --voice-transition: 0.2s;
+}
+
+/* ==================== 播放器核心 ==================== */
+
+.voice-player {
+    display: inline-flex;
+    align-items: center;
+    background: var(--voice-bg);
+    border-radius: var(--voice-radius);
+    padding: 8px 10px 8px 6px;
+    cursor: pointer;
+    max-width: 260px;
+    min-width: 120px;
+    transition: background var(--voice-transition), box-shadow var(--voice-transition), transform var(--voice-transition);
+    user-select: none;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    border: none;
+    font-family: inherit;
+}
+
+.voice-player:hover {
+    background: var(--voice-bg-hover);
+    box-shadow: var(--voice-shadow);
+}
+
+.voice-player.playing {
+    background: var(--voice-green-light);
+}
+
+.voice-player.playing:hover {
+    background: #d4edda;
+}
+
+/* 播放图标 */
+.voice-play-icon {
+    width: 34px;
+    height: 34px;
+    background: var(--voice-green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-right: 10px;
+    flex-shrink: 0;
+    transition: background var(--voice-transition), transform 0.15s;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.voice-player:hover .voice-play-icon {
+    transform: scale(1.08);
+}
+
+.voice-player.playing .voice-play-icon {
+    background: var(--voice-green-dark);
+}
+
+/* 波形 */
+.voice-wave-wrap {
+    flex: 1;
+    min-width: 60px;
+    overflow: hidden;
+}
+
+.voice-wave-bars {
+    display: flex;
+    align-items: center;
+    gap: 2.5px;
+    height: 20px;
+}
+
+.voice-wave-bars span {
+    display: block;
+    width: 3px;
+    height: 6px;
+    background: #c0c0c0;
+    border-radius: 2px;
+    transition: height 0.15s ease, background var(--voice-transition);
+}
+
+.voice-player.playing .voice-wave-bars span {
+    background: var(--voice-green);
+    animation: voiceWaveAnim 0.7s ease-in-out infinite alternate;
+}
+
+.voice-wave-bars span:nth-child(1) { animation-delay: 0s; }
+.voice-wave-bars span:nth-child(2) { animation-delay: 0.08s; }
+.voice-wave-bars span:nth-child(3) { animation-delay: 0.16s; }
+.voice-wave-bars span:nth-child(4) { animation-delay: 0.24s; }
+.voice-wave-bars span:nth-child(5) { animation-delay: 0.32s; }
+.voice-wave-bars span:nth-child(6) { animation-delay: 0.40s; }
+.voice-wave-bars span:nth-child(7) { animation-delay: 0.48s; }
+.voice-wave-bars span:nth-child(8) { animation-delay: 0.56s; }
+
+@keyframes voiceWaveAnim {
+    0%   { height: 5px; }
+    100% { height: 20px; }
+}
+
+/* 时长 */
+.voice-duration-label {
+    font-size: 12px;
+    color: #999;
+    margin-left: 10px;
+    flex-shrink: 0;
+    min-width: 28px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 隐藏真正的 audio */
+.voice-audio-el {
+    display: none !important;
+}
+
+/* 删除按钮 */
+.voice-player .voice-del-btn {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: var(--voice-red);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 11px;
+    cursor: pointer;
+    line-height: 20px;
+    text-align: center;
+    padding: 0;
+    transition: background var(--voice-transition), transform 0.15s;
+}
+
+.voice-player:hover .voice-del-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-player .voice-del-btn:hover {
+    background: var(--voice-red-dark);
+    transform: scale(1.15);
+}
+
+/* ==================== 录音按钮 ==================== */
+
+.voice-comment-wrapper {
+    margin: 14px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.voice-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.voice-record-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, var(--voice-green), var(--voice-green-dark));
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(7, 193, 96, 0.3);
+    transition: all var(--voice-transition);
+    position: relative;
+    overflow: hidden;
+    font-family: inherit;
+}
+
+.voice-record-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s;
+}
+
+.voice-record-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(7, 193, 96, 0.4);
+}
+
+.voice-record-btn:hover::before {
+    left: 100%;
+}
+
+.voice-record-btn:active {
+    transform: translateY(0);
+}
+
+.voice-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z' fill='black'/%3E%3Cpath d='M19 10v1a7 7 0 0 1-14 0v-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='8' y1='23' x2='16' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z' fill='black'/%3E%3Cpath d='M19 10v1a7 7 0 0 1-14 0v-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='8' y1='23' x2='16' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    transition: transform var(--voice-transition);
+}
+
+.voice-label {
+    transition: opacity var(--voice-transition);
+}
+
+.voice-hint {
+    display: none;
+    opacity: 0;
+    transition: opacity var(--voice-transition);
+}
+
+/* 录音中状态 */
+.voice-record-btn.recording {
+    background: linear-gradient(135deg, var(--voice-red), var(--voice-red-dark));
+    box-shadow: 0 2px 8px rgba(232, 64, 64, 0.35);
+    animation: voiceRecordPulse 1s ease-in-out infinite;
+}
+
+.voice-record-btn.recording .voice-icon {
+    transform: scale(1.2);
+}
+
+.voice-record-btn.recording .voice-label {
+    display: none;
+}
+
+.voice-record-btn.recording .voice-hint {
+    display: inline;
+    opacity: 1;
+}
+
+@keyframes voiceRecordPulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.05); }
+}
+
+/* 录音状态栏 */
+.voice-record-status {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: #fff3f3;
+    border: 1px solid #ffcdd2;
+    border-radius: 20px;
+    padding: 6px 14px;
+}
+
+.voice-record-status.active {
+    display: inline-flex;
+}
+
+.voice-red-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--voice-red);
+    border-radius: 50%;
+    animation: voiceRedBlink 1s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes voiceRedBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.25; }
+}
+
+.voice-record-timer {
+    font-size: 13px;
+    color: var(--voice-red);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 32px;
+}
+
+.voice-record-duration {
+    font-size: 12px;
+    color: #cc9999;
+}
+
+/* 语音列表 */
+.voice-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* 单条语音项（评论中的） */
+.voice-messages-wrapper {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ==================== 文章内语音消息块 ==================== */
+
+.voice-message-block {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #e9ecef;
+    transition: background var(--voice-transition);
+}
+
+.voice-message-block:hover {
+    background: #f1f3f4;
+}
+
+.voice-msg-author {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.voice-msg-time {
+    font-size: 11px;
+    color: #bbb;
+    margin-left: 4px;
+}
+
+.voice-message-block .voice-player {
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* ==================== 上传进度 ==================== */
+
+.voice-upload-progress {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+    padding: 6px 0;
+}
+
+.voice-upload-progress.active {
+    display: flex;
+}
+
+.voice-upload-progress .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ddd;
+    border-top-color: var(--voice-green);
+    border-radius: 50%;
+    animation: voiceSpin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes voiceSpin {
+    to { transform: rotate(360deg); }
+}
+
+.voice-upload-error {
+    font-size: 12px;
+    color: var(--voice-red);
+    padding: 4px 8px;
+    background: #fff3f3;
+    border-radius: 8px;
+    display: none;
+}
+
+.voice-upload-error.active {
+    display: inline-block;
+}
+
+/* ==================== 响应式 ==================== */
+
+@media (max-width: 480px) {
+    .voice-player {
+        max-width: 200px;
+        min-width: 100px;
+    }
+
+    .voice-record-btn {
+        padding: 9px 18px;
+        font-size: 13px;
+    }
+
+    .voice-message-block {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+    }
+}
+
+/* ==================== 主题适配 ==================== */
+
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+    .voice-player {
+        background: #2a2a2a;
+    }
+
+    .voice-player:hover {
+        background: #3a3a3a;
+    }
+
+    .voice-player.playing {
+        background: rgba(7, 193, 96, 0.15);
+    }
+
+    .voice-wave-bars span {
+        background: #888;
+    }
+
+    .voice-wave-bars span:not(.voice-player.playing .voice-wave-bars span) {
+        /* 保持中性色 */
+    }
+
+    .voice-duration-label {
+        color: #aaa;
+    }
+
+    .voice-message-block {
+        background: #1e1e1e;
+        border-color: #333;
+    }
+
+    .voice-message-block:hover {
+        background: #252525;
+    }
+
+    .voice-message-block .voice-player {
+        background: #2a2a2a;
+    }
+
+    .voice-record-status {
+        background: #2d1a1a;
+        border-color: #5a2a2a;
+    }
+}
+
+/* Twenty 系列主题适配 */
+body.theme-twentytwenty .voice-record-btn,
+body.theme-twentytwentytwo .voice-record-btn,
+body.theme-twentytwentythree .voice-record-btn {
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+body.theme-twentytwenty .voice-player,
+body.theme-twentytwentytwo .voice-player,
+body.theme-twentytwentythree .voice-player {
+    border-radius: 8px;
+}
+
+/* 小工具/侧边栏 */
+.widget .voice-player {
+    max-width: 180px;
+}
+
+/* ==================== 语音预览 UI ==================== */
+
+.voice-preview {
+    margin-top: 12px;
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.voice-preview-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.voice-preview-player {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.voice-preview-audio {
+    display: none;
+}
+
+.voice-preview-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--voice-green);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.voice-preview-play:hover {
+    background: var(--voice-green-dark);
+    transform: scale(1.05);
+}
+
+.voice-preview-play.playing {
+    background: var(--voice-green-dark);
+}
+
+.voice-preview-play .play-icon {
+    font-size: 10px;
+}
+
+.voice-preview-play .duration {
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.voice-preview-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.voice-preview-cancel,
+.voice-preview-send {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.voice-preview-cancel {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.voice-preview-cancel:hover {
+    background: #e0e0e0;
+}
+
+.voice-preview-send {
+    background: var(--voice-green);
+    color: #fff;
+}
+
+.voice-preview-send:hover {
+    background: var(--voice-green-dark);
+}
+
+.voice-preview-send:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.voice-preview.sending {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+    .voice-preview-inner {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+    
+    .voice-preview-cancel {
+        background: #3a3a3a;
+        color: #aaa;
+    }
+    
+    .voice-preview-cancel:hover {
+        background: #4a4a4a;
+    }
+}
+
+/* 评论内容中的语音图标（纯 CSS，无内联 SVG） */
+.voice-comment-icon {
+    display: inline-flex;
+    align-items: center;
+    width: 14px;
+    height: 14px;
+    margin-right: 2px;
+    vertical-align: middle;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z' fill='black'/%3E%3Cpath d='M19 10v1a7 7 0 0 1-14 0v-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='8' y1='23' x2='16' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z' fill='black'/%3E%3Cpath d='M19 10v1a7 7 0 0 1-14 0v-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='8' y1='23' x2='16' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}

@@ -1,0 +1,171 @@
+/* 古腾堡编辑器语音区块样式 */
+
+.voice-block-editor {
+    padding: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafafa;
+    max-width: 400px;
+}
+
+/* 录音中 */
+.voice-block-recording {
+    text-align: center;
+    background: #fff5f5;
+    border-color: #ff6b6b;
+}
+
+.voice-block-record-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.voice-block-mic {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #ff4757;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+
+.voice-block-mic svg {
+    width: 32px;
+    height: 32px;
+    stroke: white;
+}
+
+.recording-pulse {
+    animation: voicePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); }
+    50% { transform: scale(1.15); box-shadow: 0 4px 25px rgba(255, 71, 87, 0.6); }
+}
+
+.voice-block-timer {
+    font-size: 32px;
+    font-weight: 600;
+    color: #ff4757;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 预览 */
+.voice-block-preview {
+    background: #f0f9ff;
+    border-color: #4a9eff;
+}
+
+.voice-block-preview-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.voice-block-preview-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.voice-block-play-icon {
+    font-size: 16px;
+    color: #4a9eff;
+}
+
+.voice-block-duration-label {
+    font-size: 14px;
+    color: #666;
+    margin-left: auto;
+}
+
+.voice-block-preview-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* 已上传播放器 */
+.voice-block-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.voice-block-player .voice-wave-wrap {
+    flex: 1;
+}
+
+.voice-block-player .voice-wave-bars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+}
+
+.voice-block-player .voice-wave-bars span {
+    display: inline-block;
+    width: 3px;
+    height: 4px;
+    background: #4a9eff;
+    border-radius: 2px;
+    transition: height 0.2s;
+}
+
+.voice-block-actions {
+    margin-top: 8px;
+    text-align: right;
+}
+
+/* 上传中 */
+.voice-block-uploading {
+    text-align: center;
+    padding: 40px 16px;
+}
+
+.voice-block-spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #4a9eff;
+    border-radius: 50%;
+    animation: voiceSpin 0.8s linear infinite;
+    margin-bottom: 8px;
+}
+
+@keyframes voiceSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* 播放中状态 */
+.voice-block-player.playing .voice-block-play-icon::after {
+    content: "";
+}
+.voice-block-player.playing .voice-wave-bars span {
+    animation: voiceWaveBar 1.2s ease-in-out infinite;
+}
+
+@keyframes voiceWaveBar {
+    0%, 100% { height: 4px; }
+    50% { height: 16px; }
+}
+
+/* Placeholder 内的 URL 输入 */
+.voice-block-editor .components-text-control__input {
+    margin-top: 8px;
+}

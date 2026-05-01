@@ -1,7 +1,9 @@
 /**
  * 微信语音消息 - 前端 JavaScript
  * 支持: 评论录音、文章内播放器、波形动画
- * v3.15 — 录音按钮通过 comment_form_top 钩子输出，JS 不移动 DOM，CSS inline-flex 并排
+ * v3.20 — Gutenberg 区块 useBlockProps 修复，点击区块可选中/可拖拽
+ * v3.19 — 修复 Gutenberg 区块无法选中的问题（添加 useBlockProps）
+ * v3.18 — 古腾堡区块预加载优化，修复首次播放无声音问题
  */
 
 (function() {
@@ -557,6 +559,32 @@
             this.watchCommentList();
         },
 
+        // 解锁浏览器 AudioContext（Safari/移动端可能被挂起）
+        unlockAudioContext() {
+            if (this._audioContextUnlocked) return;
+            
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+                
+                // 创建全局 AudioContext（单例）
+                if (!this._audioContext) {
+                    this._audioContext = new AudioContextClass();
+                }
+                
+                // 如果被挂起，则恢复
+                if (this._audioContext.state === 'suspended') {
+                    this._audioContext.resume().then(() => {
+                        this._audioContextUnlocked = true;
+                    });
+                } else {
+                    this._audioContextUnlocked = true;
+                }
+            } catch (e) {
+                // 静默失败
+            }
+        },
+
         // ==================== 文章内播放器（全局，跨实例）====================
 
         initArticlePlayers() {
@@ -569,7 +597,11 @@
                 if (!audio) return;
 
                 player.dataset.initialized = '1';
-                player.addEventListener('click', () => {
+                player.addEventListener('click', (e) => {
+                    // 防止快速重复点击
+                    if (player.dataset.clicking === '1') return;
+                    player.dataset.clicking = '1';
+                    setTimeout(() => player.dataset.clicking = '', 300);
                     document.querySelectorAll('.voice-player.playing').forEach(p => {
                         if (p !== player) {
                             p.classList.remove('playing');
@@ -580,8 +612,13 @@
 
                     if (audio.paused) {
                         player.classList.add('playing');
+                        
+                        // 解锁 AudioContext（Safari/移动端可能需要）
+                        this.unlockAudioContext();
+                        
                         audio.play().catch(err => {
                             player.classList.remove('playing');
+                            console.error('Voice play error:', err.message, 'URL:', audio.src);
                         });
                     } else {
                         player.classList.remove('playing');

@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: WP语音消息
- * Plugin URI: https://hjyl.org
+ * Plugin URI: https://hjyl.org/wp-voice-messages/
  * Description: 为 WordPress 评论和文章添加微信风格的语音消息功能。支持按住说话、自动上传、波形播放。
- * Version: 3.15
+ * Version: 3.20
  * Author: HJYL
  * Author URI: https://hjyl.org
  * Text Domain: voice-messages
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('VOICE_PLUGIN_VERSION', '3.15');
+define('VOICE_PLUGIN_VERSION', '3.20');
 define('VOICE_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VOICE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
@@ -975,7 +975,10 @@ final class Voice_Messages {
                             if (playerAudio) playerAudio.src = result.url;
                             var durLabel = playerEl.querySelector('.voice-duration-label');
                             if (durLabel) durLabel.textContent = (result.duration || previewDuration) + '"';
+                            playerEl.dataset.initialized = ''; // 重置初始化标记
                         }
+                        // 初始化播放器事件监听器
+                        if (window.VoiceApp) window.VoiceApp.initArticlePlayers();
                         // 在编辑器光标处插入 shortcode
                         var shortcode = '[voice url="' + result.url + '" duration="' + (result.duration || previewDuration) + '"]';
                         if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor && !tinyMCE.activeEditor.isHidden()) {
@@ -1023,6 +1026,11 @@ final class Voice_Messages {
                 stopBtn.style.display = 'none';
                 timerEl.style.display = 'none';
             }
+
+            // 页面加载后初始化播放器
+            setTimeout(function() {
+                if (window.VoiceApp) window.VoiceApp.initArticlePlayers();
+            }, 100);
         })();
         </script>
         <?php

@@ -78,12 +78,6 @@
     gap: 12px;
 }
 
-.voice-block-editor {
-    display: block;
-    max-width: 400px;
-    margin: 0 auto;
-}
-
 .voice-block-preview-player .voice-wave-wrap {
     flex: 1;
 }

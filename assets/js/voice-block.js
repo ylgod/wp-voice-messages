@@ -10,6 +10,7 @@
     var useState = wp.element.useState;
     var useEffect = wp.element.useEffect;
     var useRef = wp.element.useRef;
+    var useBlockProps = wp.blockEditor.useBlockProps;
     var InspectorControls = wp.blockEditor.InspectorControls;
     var PanelBody = wp.components.PanelBody;
     var TextControl = wp.components.TextControl;
@@ -44,6 +45,8 @@
     function VoiceRecorder(props) {
         var attrs = props.attributes;
         var setAttributes = props.setAttributes;
+
+        var blockProps = useBlockProps({ className: 'voice-block-editor' });
 
         var previewStateHook = useState(false);
         var previewPlayingState = previewStateHook[0];
@@ -313,7 +316,7 @@
 
             var curDuration = attrs.duration || duration;
 
-            return el('div', { className: 'voice-block-editor' },
+            return el('div', blockProps,
                 el('div', {
                     className: 'voice-block-player' + (playingRef.current ? ' playing' : ''),
                     onClick: toggleEditorPlay,
@@ -328,7 +331,7 @@
                     ),
                     el('audio', {
                         src: attrs.url,
-                        preload: 'none',
+                        preload: 'metadata',
                         ref: audioRef,
                         onEnded: function() {
                             playingRef.current = false;
@@ -386,7 +389,8 @@
 
         // 上传中
         if (recorderState === 'uploading') {
-            return el('div', { className: 'voice-block-editor voice-block-uploading' },
+            var uploadProps = useBlockProps({ className: 'voice-block-editor voice-block-uploading' });
+            return el('div', uploadProps,
                 el('div', { className: 'voice-block-spinner' }),
                 el('p', null, '上传中...')
             );
@@ -394,7 +398,8 @@
 
         // 录音中
         if (recorderState === STATE_RECORDING) {
-            return el('div', { className: 'voice-block-editor voice-block-recording' },
+            var recordingProps = useBlockProps({ className: 'voice-block-editor voice-block-recording' });
+            return el('div', recordingProps,
                 el('div', { className: 'voice-block-record-area' },
                     el('div', { className: 'voice-block-mic recording-pulse' }, micIcon),
                     el('div', { className: 'voice-block-timer' }, timerDisplay),
@@ -417,7 +422,8 @@
                 }));
             }
 
-            return el('div', { className: 'voice-block-editor voice-block-preview' },
+            var previewProps = useBlockProps({ className: 'voice-block-editor voice-block-preview' });
+            return el('div', previewProps,
                 el('div', { className: 'voice-block-preview-inner' },
                     el('div', {
                         className: 'voice-block-preview-player' + (previewPlayingState ? ' playing' : ''),
@@ -442,7 +448,8 @@
                             ref: audioRef,
                             onEnded: function() { setPreviewPlayingState(false); },
                             onPause: function() { setPreviewPlayingState(false); },
-                            onPlay: function() { setPreviewPlayingState(true); }
+                            onPlay: function() { setPreviewPlayingState(true); },
+                            onLoadedData: function() { /* audio ready */ }
                         })
                     ),
                     el('div', { className: 'voice-block-preview-actions' },
@@ -460,7 +467,8 @@
         }
 
         // 空闲：显示录音按钮
-        return el('div', { className: 'voice-block-editor', style: { width: '100%' } },
+        var defaultProps = useBlockProps({ className: 'voice-block-editor', style: { width: '100%' } });
+        return el('div', defaultProps,
             el(Placeholder, {
                 icon: micIcon,
                 label: __('语音消息', 'voice-messages'),

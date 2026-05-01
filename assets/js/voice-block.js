@@ -45,6 +45,10 @@
         var attrs = props.attributes;
         var setAttributes = props.setAttributes;
 
+        var previewStateHook = useState(false);
+        var previewPlayingState = previewStateHook[0];
+        var setPreviewPlayingState = previewStateHook[1];
+
         var stateHook = useState(STATE_IDLE);
         var recorderState = stateHook[0];
         var setRecorderState = stateHook[1];
@@ -218,11 +222,10 @@
                 body: formData
             }).then(function(res) {
                 return res.text().then(function(text) {
-                    console.log('[VoiceBlock] Raw response:', text.substring(0, 500));
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.error('[VoiceBlock] JSON parse error. Raw:', text);
+                        // JSON parse error
                         throw new Error('服务器返回无效数据');
                     }
                 });
@@ -364,13 +367,17 @@
                         el(TextControl, {
                             label: __('音频地址', 'voice-messages'),
                             value: attrs.url,
-                            onChange: function(val) { setAttributes({ url: val }); }
+                            onChange: function(val) { setAttributes({ url: val }); },
+                            __next40pxDefaultSize: true,
+                            __nextHasNoMarginBottom: true
                         }),
                         el(TextControl, {
                             label: __('时长(秒)', 'voice-messages'),
                             type: 'number',
                             value: attrs.duration || duration,
-                            onChange: function(val) { setAttributes({ duration: parseInt(val) || 0 }); }
+                            onChange: function(val) { setAttributes({ duration: parseInt(val) || 0 }); },
+                            __next40pxDefaultSize: true,
+                            __nextHasNoMarginBottom: true
                         })
                     )
                 )
@@ -400,13 +407,43 @@
             );
         }
 
-        // 预览
+        // 预览（使用 audioRef + previewPlayingState，参考已上传状态的实现）
         if (recorderState === STATE_PREVIEW) {
+            var previewWaveBars = [];
+            for (var j = 1; j <= 8; j++) {
+                previewWaveBars.push(el('span', {
+                    key: 'pbar-' + j,
+                    style: { animationDelay: (j * 0.08) + 's' }
+                }));
+            }
+
             return el('div', { className: 'voice-block-editor voice-block-preview' },
                 el('div', { className: 'voice-block-preview-inner' },
-                    el('div', { className: 'voice-block-preview-player' },
-                        el('span', { className: 'voice-block-play-icon' }, '▶'),
-                        el('span', { className: 'voice-duration-label' }, duration + '"')
+                    el('div', {
+                        className: 'voice-block-preview-player' + (previewPlayingState ? ' playing' : ''),
+                        onClick: function() {
+                            if (!audioRef.current) return;
+                            if (previewPlayingState) {
+                                audioRef.current.pause();
+                            } else {
+                                audioRef.current.play().catch(function() {});
+                            }
+                        },
+                        style: { cursor: 'pointer' }
+                    },
+                        el('span', { className: 'voice-block-play-icon' }, previewPlayingState ? '⏸' : '▶'),
+                        el('div', { className: 'voice-wave-wrap' },
+                            el('div', { className: 'voice-wave-bars' }, previewWaveBars)
+                        ),
+                        el('span', { className: 'voice-duration-label' }, duration + '"'),
+                        el('audio', {
+                            src: previewUrlRef.current || '',
+                            preload: 'metadata',
+                            ref: audioRef,
+                            onEnded: function() { setPreviewPlayingState(false); },
+                            onPause: function() { setPreviewPlayingState(false); },
+                            onPlay: function() { setPreviewPlayingState(true); }
+                        })
                     ),
                     el('div', { className: 'voice-block-preview-actions' },
                         el(Button, {
@@ -423,11 +460,12 @@
         }
 
         // 空闲：显示录音按钮
-        return el(Placeholder, {
-            icon: micIcon,
-            label: __('语音消息', 'voice-messages'),
-            instructions: __('点击按钮开始录音，录制完成后将自动插入文章', 'voice-messages')
-        },
+        return el('div', { className: 'voice-block-editor', style: { width: '100%' } },
+            el(Placeholder, {
+                icon: micIcon,
+                label: __('语音消息', 'voice-messages'),
+                instructions: __('点击按钮开始录音，录制完成后将自动插入文章', 'voice-messages')
+            }),
             el(Button, {
                 isPrimary: true,
                 onClick: startRecord
@@ -442,13 +480,16 @@
                 onChange: function(val) {
                     setAttributes({ url: val });
                     if (val) setRecorderState(STATE_UPLOADED);
-                }
+                },
+                __next40pxDefaultSize: true,
+                __nextHasNoMarginBottom: true
             })
         );
     }
 
     // 注册区块
     wp.blocks.registerBlockType('voice-messages/voice-block', {
+        apiVersion: 3,
         title: __('语音消息', 'voice-messages'),
         description: __('插入语音消息，支持按住录音', 'voice-messages'),
         icon: micIcon,

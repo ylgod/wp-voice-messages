@@ -5,7 +5,17 @@
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     background: #fafafa;
-    max-width: 400px;
+    /* 移除固定 max-width，允许对齐到编辑器宽度 */
+}
+
+/* Gutenberg 对齐支持 */
+.voice-block-editor.alignwide {
+    max-width: 900px;
+}
+
+.voice-block-editor.alignfull {
+    max-width: none;
+    border-radius: 0;
 }
 
 /* 录音中 */
@@ -68,6 +78,36 @@
     gap: 12px;
 }
 
+.voice-block-editor {
+    display: block;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.voice-block-preview-player .voice-wave-wrap {
+    flex: 1;
+}
+
+.voice-block-preview-player .voice-wave-bars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+}
+
+.voice-block-preview-player .voice-wave-bars span {
+    display: inline-block;
+    width: 3px;
+    height: 4px;
+    background: #4a9eff;
+    border-radius: 2px;
+    transition: height 0.2s;
+}
+
+.voice-block-preview-player.playing .voice-wave-bars span {
+    animation: voiceWaveBar 1.2s ease-in-out infinite;
+}
+
 .voice-block-preview-player {
     display: flex;
     align-items: center;
@@ -76,17 +116,6 @@
     background: white;
     border-radius: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.voice-block-play-icon {
-    font-size: 16px;
-    color: #4a9eff;
-}
-
-.voice-block-duration-label {
-    font-size: 14px;
-    color: #666;
-    margin-left: auto;
 }
 
 .voice-block-preview-actions {

@@ -3,7 +3,7 @@
  * Plugin Name: WP语音消息
  * Plugin URI: https://hjyl.org
  * Description: 为 WordPress 评论和文章添加微信风格的语音消息功能。支持按住说话、自动上传、波形播放。
- * Version: 2.0.8
+ * Version: 3.15
  * Author: HJYL
  * Author URI: https://hjyl.org
  * Text Domain: voice-messages
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('VOICE_PLUGIN_VERSION', '1.0.1');
+define('VOICE_PLUGIN_VERSION', '3.15');
 define('VOICE_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VOICE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
@@ -46,8 +46,8 @@ final class Voice_Messages {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
 
         // 评论表单
-        add_action('comment_form_logged_in_after', array($this, 'add_voice_button_to_comment_form'));
-        add_action('comment_form_after_fields', array($this, 'add_voice_button_to_comment_form'));
+        // 录音按钮+附件区+隐藏字段：comment_form_top 在表单最开头触发
+        add_action('comment_form_top', array($this, 'add_voice_area_before_submit'));
 
         // 保存评论语音
         add_action('comment_post', array($this, 'save_voice_in_comment'), 10, 2);
@@ -74,6 +74,9 @@ final class Voice_Messages {
 
         // 古腾堡区块注册（前台也需渲染）
         add_action('init', array($this, 'register_voice_block'));
+
+        // 古腾堡编辑器 iframe 内注入样式（WP 5.8+）
+        add_filter('block_editor_settings_all', array($this, 'inject_editor_iframe_styles'), 10, 2);
         // 古腾堡区块前台渲染由 register_block_type 的 render_callback 处理
 
         // AJAX 上传
@@ -141,7 +144,6 @@ final class Voice_Messages {
             'permission_callback' => array($this, 'check_comment_permission'),
         ));
         
-        error_log('[VoiceMSG] REST routes registered');
     }
     
     public function check_upload_permission() {
@@ -212,9 +214,10 @@ final class Voice_Messages {
             require_once(ABSPATH . 'wp-admin/includes/media.php');
         }
 
-        // 安全文件名：voice_YYYYMMDD_HHMMSS_随机8位
+        // 安全文件名：voice_YYYYMMDD_HHMMSS_随机8位（北京时间）
         $random_str = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
-        $file['name'] = 'voice_' . date('Ymd_His') . '_' . $random_str . '.' . $ext;
+        $bj_ts = time() + 8 * 3600 - intval(date('Z'));
+        $file['name'] = 'voice_' . gmdate('Ymd_His', $bj_ts) . '_' . $random_str . '.' . $ext;
 
         // 确保 $_FILES 中有数据（media_handle_upload 依赖 $_FILES）
         $_FILES['audio'] = $file;
@@ -286,8 +289,6 @@ final class Voice_Messages {
         $user_agent = $request->get_param('user_agent');
         $parent = $request->get_param('parent');
 
-        error_log('[VoiceMSG] create_voice_comment called. url=' . var_export($url, true));
-
         // 验证文章
         if (!$post_id || !get_post($post_id)) {
             return new WP_Error('invalid_post', '无效的文章ID', array('status' => 400));
@@ -313,7 +314,7 @@ final class Voice_Messages {
         // 构建评论数据
         $comment_data = array(
             'comment_post_ID'      => intval($post_id),
-            'comment_content'      => '<span class="voice-comment-icon"></span> 语音消息<!--' . time() . '-->',
+            'comment_content'      => '<span class="voice-comment-icon"></span> #语音消息<!--' . time() . '-->',
             'comment_type'         => 'comment',
             'comment_approved'     => 1, // 自动批准
             'comment_author_IP'    => $client_ip,
@@ -333,7 +334,6 @@ final class Voice_Messages {
             if (!empty($url)) {
                 $sanitized_url = esc_url_raw($url);
                 $comment_data['comment_author_url'] = $sanitized_url;
-                error_log('[VoiceMSG] Guest URL: ' . $url . ' -> sanitized: ' . $sanitized_url);
             }
         }
         
@@ -364,8 +364,6 @@ final class Voice_Messages {
         if ($ua) {
             update_comment_meta($comment_id, 'voice_user_agent', $ua);
         }
-
-        error_log('[VoiceMSG] Comment created: ' . $comment_id . ', IP: ' . $client_ip);
 
         // 获取头像
         $avatar_url = '';
@@ -467,44 +465,35 @@ final class Voice_Messages {
 
     // ==================== 评论功能 ====================
 
-    public function add_voice_button_to_comment_form() {
+    // 录音按钮 + 附件区 + 隐藏字段（comment_form_top，表单最开头触发）
+    // 使用 class 而非 id，支持多评论区共存
+    public function add_voice_area_before_submit() {
         $max_duration = intval(get_option('voice_max_duration', 60));
         ?>
-        <div class="voice-comment-wrapper" id="voiceCommentWrapper">
-            <div class="voice-controls">
-                <button type="button" id="voiceRecordBtn" class="voice-record-btn" data-context="comment">
+        <div class="voice-comment-wrapper">
+            <div class="voice-submit-row">
+                <button type="button" class="voice-record-btn" data-context="comment">
                     <span class="voice-icon"></span>
-                    <span class="voice-label"><?php esc_html_e('按住说话', 'voice-messages'); ?></span>
-                    <span class="voice-hint"><?php esc_html_e('录音中...', 'voice-messages'); ?></span>
                 </button>
-                <div class="voice-record-status" id="voiceRecordStatus">
+                <div class="voice-record-status">
                     <span class="voice-red-dot"></span>
-                    <span class="voice-record-timer" id="voiceTimer">0"</span>
-                    <span class="voice-record-duration"><?php printf(esc_html__('最长%d秒', 'voice-messages'), $max_duration); ?></span>
+                    <span class="voice-record-timer">0"</span>
                 </div>
+                <div class="voice-attachments"></div>
             </div>
-            <div class="voice-items-list" id="voiceItemsList"></div>
-            <input type="hidden" name="voice_urls" id="voiceUrls" value="">
-            <input type="hidden" name="voice_durations" id="voiceDurations" value="">
+            <input type="hidden" name="voice_urls" class="voice-urls-input" value="">
+            <input type="hidden" name="voice_durations" class="voice-durations-input" value="">
         </div>
         <?php
     }
 
     public function save_voice_in_comment($comment_id, $comment_approved) {
-        // 调试日志
-        error_log('[VoiceMSG] save_voice_in_comment called, comment_id=' . $comment_id);
-        error_log('[VoiceMSG] POST data: ' . print_r($_POST, true));
-        
         if (!isset($_POST['voice_urls']) || empty($_POST['voice_urls'])) {
-            error_log('[VoiceMSG] No voice_urls in POST');
             return;
         }
 
         $urls = sanitize_text_field(wp_unslash($_POST['voice_urls']));
         $durations = isset($_POST['voice_durations']) ? sanitize_text_field(wp_unslash($_POST['voice_durations'])) : '';
-
-        error_log('[VoiceMSG] URLs: ' . $urls);
-        error_log('[VoiceMSG] Durations: ' . $durations);
 
         if (!empty($urls)) {
             update_comment_meta($comment_id, 'voice_urls', $urls);
@@ -512,8 +501,16 @@ final class Voice_Messages {
         if (!empty($durations)) {
             update_comment_meta($comment_id, 'voice_durations', $durations);
         }
-        
-        error_log('[VoiceMSG] Voice data saved successfully');
+
+        // 将评论内容更新为 #评论ID 语音消息
+        $voice_count = count(array_filter(explode(',', $urls)));
+        $voice_text = $voice_count > 1
+            ? '#' . $comment_id . ' ' . $voice_count . '条语音消息'
+            : '#' . $comment_id . ' 语音消息';
+        wp_update_comment(array(
+            'comment_ID'      => $comment_id,
+            'comment_content' => '<span class="voice-comment-icon"></span> ' . $voice_text,
+        ));
     }
 
     public function display_voice_in_comment($comment_text, $comment) {
@@ -535,16 +532,17 @@ final class Voice_Messages {
             return $comment_text;
         }
 
-        $html = '<div class="voice-messages-wrapper">';
-        
+        $html = '<p class="voice-messages-wrapper">';
+
         foreach ($urls as $i => $url) {
             $duration = isset($durations[$i]) ? intval($durations[$i]) : 0;
             $html .= $this->build_player_html($url, $duration, 'comment_' . $comment->comment_ID . '_' . $i);
         }
 
-        $html .= '</div>';
+        $html .= '</p>';
 
-        return $comment_text . $html;
+        // 紧贴评论文字，避免 wpautop 在中间插入 <br>
+        return rtrim($comment_text) . $html;
     }
 
     // ==================== 短代码 ====================
@@ -576,7 +574,7 @@ final class Voice_Messages {
             return '';
         }
 
-        $html = '<div class="voice-message-block">';
+        $html = '<p class="voice-message-block">';
         
         if (!empty($atts['author'])) {
             $html .= '<span class="voice-msg-author">' . esc_html($atts['author']) . '</span>';
@@ -589,7 +587,7 @@ final class Voice_Messages {
             $html .= '<span class="voice-msg-time">' . esc_html($atts['time']) . '</span>';
         }
         
-        $html .= '</div>';
+        $html .= '</p>';
 
         return $html;
     }
@@ -610,18 +608,13 @@ final class Voice_Messages {
             $wave_bars .= '<span style="animation-delay:' . esc_attr($delay) . 's"></span>';
         }
 
-        ob_start();
-        ?>
-        <div class="voice-player" data-url="<?php echo esc_url($url); ?>" data-duration="<?php echo esc_attr($duration); ?>" id="<?php echo esc_attr($player_id); ?>">
-            <div class="voice-play-icon">▶</div>
-            <div class="voice-wave-wrap">
-                <div class="voice-wave-bars"><?php echo $wave_bars; ?></div>
-            </div>
-            <span class="voice-duration-label"><?php echo esc_html($duration); ?>"</span>
-            <audio class="voice-audio-el" src="<?php echo esc_url($url); ?>" preload="none"></audio>
-        </div>
-        <?php
-        return ob_get_clean();
+        // 单行输出，避免 wpautop 插入 <br>
+        return '<span class="voice-player" data-url="' . esc_url($url) . '" data-duration="' . esc_attr($duration) . '" id="' . esc_attr($player_id) . '">' .
+               '<span class="voice-play-icon">▶</span>' .
+               '<span class="voice-wave-wrap"><span class="voice-wave-bars">' . $wave_bars . '</span></span>' .
+               '<span class="voice-duration-label">' . esc_html($duration) . '"</span>' .
+               '<audio class="voice-audio-el" src="' . esc_url($url) . '" preload="none"></audio>' .
+               '</span>';
     }
 
     // ==================== 后台管理 ====================
@@ -762,9 +755,9 @@ final class Voice_Messages {
         $duration = isset($attributes['duration']) ? intval($attributes['duration']) : 0;
         if (empty($url)) return '';
         $player_id = 'vb_' . uniqid();
-        return '<div class="voice-messages-wrapper">' .
+        return '<p class="voice-messages-wrapper">' .
                $this->build_player_html($url, $duration, $player_id) .
-               '</div>';
+               '</p>';
     }
 
     /**
@@ -798,6 +791,21 @@ final class Voice_Messages {
         ));
     }
 
+    /**
+     * 将编辑器专用 CSS 注入到古腾堡 iframe 内部
+     * WP 5.8+ 的编辑器画布使用 iframe，enqueue_block_editor_assets 的样式无法穿透
+     */
+    public function inject_editor_iframe_styles($settings, $context) {
+        $css_file = VOICE_PLUGIN_DIR . 'assets/css/voice-block-editor.css';
+        if (file_exists($css_file)) {
+            $css = file_get_contents($css_file);
+            if ($css) {
+                $settings['styles'][] = array('css' => $css, '__unstableType' => 'css');
+            }
+        }
+        return $settings;
+    }
+
     // ==================== 经典编辑器 Meta Box ====================
 
     /**
@@ -825,18 +833,18 @@ final class Voice_Messages {
         <div id="voiceClassicEditor">
             <div id="voiceClassicStatus"<?php echo empty($voice_url) ? ' style="display:none"' : ''; ?>>
                 <p><strong>已添加语音：</strong></p>
-                <div class="voice-player" data-url="<?php echo esc_url($voice_url); ?>" data-duration="<?php echo esc_attr($voice_duration); ?>" id="v_classic_<?php echo $post->ID; ?>">
-                    <div class="voice-play-icon">▶</div>
-                    <div class="voice-wave-wrap">
-                        <div class="voice-wave-bars">
+                <span class="voice-player" data-url="<?php echo esc_url($voice_url); ?>" data-duration="<?php echo esc_attr($voice_duration); ?>" id="v_classic_<?php echo $post->ID; ?>">
+                    <span class="voice-play-icon">▶</span>
+                    <span class="voice-wave-wrap">
+                        <span class="voice-wave-bars">
                         <?php for ($i = 1; $i <= 8; $i++): ?>
                             <span style="animation-delay:<?php echo $i * 0.08; ?>s"></span>
                         <?php endfor; ?>
-                        </div>
-                    </div>
+                        </span>
+                    </span>
                     <span class="voice-duration-label"><?php echo esc_html($voice_duration); ?>"</span>
                     <audio class="voice-audio-el" src="<?php echo esc_url($voice_url); ?>" preload="none"></audio>
-                </div>
+                </span>
                 <input type="hidden" name="voice_url" value="<?php echo esc_attr($voice_url); ?>" />
                 <input type="hidden" name="voice_duration" value="<?php echo esc_attr($voice_duration); ?>" />
                 <button type="button" class="button button-small" id="voiceRemoveBtn" style="margin-top:6px">移除语音</button>
@@ -958,13 +966,33 @@ final class Voice_Messages {
                         // 写入隐藏字段
                         document.querySelector('input[name=voice_url]').value = result.url;
                         document.querySelector('input[name=voice_duration]').value = result.duration || previewDuration;
+                        // 更新 statusEl 中的播放器 URL 和时长
+                        var playerEl = statusEl.querySelector('.voice-player');
+                        if (playerEl) {
+                            playerEl.setAttribute('data-url', result.url);
+                            playerEl.setAttribute('data-duration', result.duration || previewDuration);
+                            var playerAudio = playerEl.querySelector('.voice-audio-el');
+                            if (playerAudio) playerAudio.src = result.url;
+                            var durLabel = playerEl.querySelector('.voice-duration-label');
+                            if (durLabel) durLabel.textContent = (result.duration || previewDuration) + '"';
+                        }
                         // 在编辑器光标处插入 shortcode
-                        if (typeof wp !== 'undefined' && wp.data && wp.data.select('core/editor')) {
+                        var shortcode = '[voice url="' + result.url + '" duration="' + (result.duration || previewDuration) + '"]';
+                        if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor && !tinyMCE.activeEditor.isHidden()) {
+                            tinyMCE.activeEditor.insertContent(shortcode);
+                        } else if (typeof wp !== 'undefined' && wp.data && wp.data.select('core/editor')) {
                             wp.data.dispatch('core/block-editor').insertBlocks(
-                                wp.blocks.createBlock('core/shortcode', {text:'[voice url="'+result.url+'" duration="'+(result.duration||previewDuration)+'"]'})
+                                wp.blocks.createBlock('core/shortcode', {text: shortcode})
                             );
-                        } else if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor) {
-                            tinyMCE.activeEditor.insertContent('[voice url="'+result.url+'" duration="'+(result.duration||previewDuration)+'"]');
+                        } else {
+                            // 纯文本编辑器
+                            var textarea = document.getElementById('content');
+                            if (textarea) {
+                                var pos = textarea.selectionStart;
+                                var val = textarea.value;
+                                textarea.value = val.substring(0, pos) + shortcode + val.substring(pos);
+                                textarea.selectionStart = textarea.selectionEnd = pos + shortcode.length;
+                            }
                         }
                         // 更新预览
                         statusEl.style.display = '';
@@ -1049,7 +1077,8 @@ final class Voice_Messages {
         // 安全文件名：voice_YYYYMMDD_HHMMSS_随机8位
         $ext = strtolower(pathinfo($_FILES['audio']['name'], PATHINFO_EXTENSION));
         $random_str = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
-        $_FILES['audio']['name'] = 'voice_' . date('Ymd_His') . '_' . $random_str . '.' . $ext;
+        $bj_ts = time() + 8 * 3600 - intval(date('Z'));
+        $_FILES['audio']['name'] = 'voice_' . gmdate('Ymd_His', $bj_ts) . '_' . $random_str . '.' . $ext;
 
         $id = media_handle_upload('audio', 0);
 

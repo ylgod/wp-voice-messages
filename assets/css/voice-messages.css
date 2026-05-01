@@ -59,7 +59,7 @@
     align-items: center;
     justify-content: center;
     color: #fff;
-    margin-right: 10px;
+    margin-right: 2px;
     flex-shrink: 0;
     transition: background var(--voice-transition), transform 0.15s;
     font-size: 12px;
@@ -165,45 +165,42 @@
 
 /* ==================== 录音按钮 ==================== */
 
+/* 录音按钮区域 — comment_form 钩子输出在表单 submit 按钮之前 */
 .voice-comment-wrapper {
-    margin: 14px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.voice-controls {
-    display: flex;
+    display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    margin: 0;
+    vertical-align: middle;
 }
 
+/* 录音按钮行 */
+.voice-submit-row {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-right: 6px;
+}
+
+/* 录音按钮 */
 .voice-record-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     background: linear-gradient(135deg, var(--voice-green), var(--voice-green-dark));
     color: #fff;
     border: none;
-    padding: 10px 22px;
-    border-radius: 24px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(7, 193, 96, 0.3);
     transition: all var(--voice-transition);
-    position: relative;
+    padding: 0;
     overflow: hidden;
     font-family: inherit;
-}
-
-.voice-record-btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-    transition: left 0.5s;
 }
 
 .voice-record-btn:hover {
@@ -211,20 +208,16 @@
     box-shadow: 0 4px 14px rgba(7, 193, 96, 0.4);
 }
 
-.voice-record-btn:hover::before {
-    left: 100%;
-}
-
 .voice-record-btn:active {
     transform: translateY(0);
 }
 
-.voice-icon {
+.voice-record-btn .voice-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     background-color: currentColor;
     -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z' fill='black'/%3E%3Cpath d='M19 10v1a7 7 0 0 1-14 0v-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='8' y1='23' x2='16' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
     mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z' fill='black'/%3E%3Cpath d='M19 10v1a7 7 0 0 1-14 0v-1' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='12' y1='18' x2='12' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='8' y1='23' x2='16' y2='23' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -237,14 +230,10 @@
     transition: transform var(--voice-transition);
 }
 
-.voice-label {
-    transition: opacity var(--voice-transition);
-}
-
-.voice-hint {
+/* 隐藏文字标签（圆形按钮不需要） */
+.voice-record-btn .voice-label,
+.voice-record-btn .voice-hint {
     display: none;
-    opacity: 0;
-    transition: opacity var(--voice-transition);
 }
 
 /* 录音中状态 */
@@ -258,21 +247,12 @@
     transform: scale(1.2);
 }
 
-.voice-record-btn.recording .voice-label {
-    display: none;
-}
-
-.voice-record-btn.recording .voice-hint {
-    display: inline;
-    opacity: 1;
-}
-
 @keyframes voiceRecordPulse {
     0%, 100% { transform: scale(1); }
     50%       { transform: scale(1.05); }
 }
 
-/* 录音状态栏 */
+/* 录音状态栏（紧贴按钮左侧） */
 .voice-record-status {
     display: none;
     align-items: center;
@@ -281,6 +261,7 @@
     border: 1px solid #ffcdd2;
     border-radius: 20px;
     padding: 6px 14px;
+    white-space: nowrap;
 }
 
 .voice-record-status.active {
@@ -314,16 +295,56 @@
     color: #cc9999;
 }
 
-/* 语音列表 */
-.voice-items-list {
+/* 语音附件区域（评论框下方） */
+.voice-attachments {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.voice-attached-item {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
+    background: var(--voice-green-light, #e8f5e9);
+    border-radius: 18px;
+    padding: 4px 8px 4px 4px;
+    max-width: 250px;
+    position: relative;
+}
+
+.voice-attached-item .voice-player {
+    background: #fff;
+}
+
+.voice-attached-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.08);
+    color: #666;
+    border: none;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.voice-attached-remove:hover {
+    background: rgba(232, 64, 64, 0.15);
+    color: var(--voice-red);
 }
 
 /* 单条语音项（评论中的） */
 .voice-messages-wrapper {
     margin-top: 10px;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -335,7 +356,7 @@
     background: #f8f9fa;
     border-radius: 12px;
     padding: 14px 16px;
-    margin: 14px 0;
+    margin: 14px 0 0 0;
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -419,8 +440,8 @@
     }
 
     .voice-record-btn {
-        padding: 9px 18px;
-        font-size: 13px;
+        width: 28px;
+        height: 28px;
     }
 
     .voice-message-block {
@@ -430,6 +451,21 @@
 }
 
 /* ==================== 主题适配 ==================== */
+
+/* 语音附件深色适配 */
+@media (prefers-color-scheme: dark) {
+    .voice-attached-item {
+        background: #1a2e1a;
+    }
+    .voice-attached-remove {
+        background: rgba(255,255,255,0.1);
+        color: #aaa;
+    }
+    .voice-attached-remove:hover {
+        background: rgba(232, 64, 64, 0.2);
+        color: var(--voice-red);
+    }
+}
 
 /* 深色主题适配 */
 @media (prefers-color-scheme: dark) {

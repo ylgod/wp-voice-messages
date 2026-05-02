@@ -3,7 +3,7 @@
  * Plugin Name: WP语音消息
  * Plugin URI: https://hjyl.org/wp-voice-messages/
  * Description: 为 WordPress 评论和文章添加微信风格的语音消息功能。支持按住说话、自动上传、波形播放。
- * Version: 3.20
+ * Version: 3.23
  * Author: HJYL
  * Author URI: https://hjyl.org
  * Text Domain: voice-messages
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('VOICE_PLUGIN_VERSION', '3.20');
+define('VOICE_PLUGIN_VERSION', '3.23');
 define('VOICE_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VOICE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
@@ -502,15 +502,23 @@ final class Voice_Messages {
             update_comment_meta($comment_id, 'voice_durations', $durations);
         }
 
-        // 将评论内容更新为 #评论ID 语音消息
-        $voice_count = count(array_filter(explode(',', $urls)));
-        $voice_text = $voice_count > 1
-            ? '#' . $comment_id . ' ' . $voice_count . '条语音消息'
-            : '#' . $comment_id . ' 语音消息';
-        wp_update_comment(array(
-            'comment_ID'      => $comment_id,
-            'comment_content' => '<span class="voice-comment-icon"></span> ' . $voice_text,
-        ));
+        // 如果评论文字包含 #语音消息 占位符，替换为实际评论ID
+        // 录音时用 #语音消息 占位，提交后自动替换为 #评论ID 语音消息
+        $existing_content = get_comment($comment_id);
+        $original_text = $existing_content ? $existing_content->comment_content : '';
+        
+        if (strpos($original_text, '#语音消息') !== false) {
+            $updated_content = preg_replace('/#语音消息/', '#' . $comment_id . ' 语音消息', $original_text, 1);
+            wp_update_comment(array(
+                'comment_ID'      => $comment_id,
+                'comment_content' => $updated_content,
+            ));
+        } else {
+            wp_update_comment(array(
+                'comment_ID'      => $comment_id,
+                'comment_content' => $original_text,
+            ));
+        }
     }
 
     public function display_voice_in_comment($comment_text, $comment) {

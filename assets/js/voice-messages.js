@@ -1,6 +1,7 @@
 /**
  * 微信语音消息 - 前端 JavaScript
  * 支持: 评论录音、文章内播放器、波形动画
+ * v3.21 — 后台评论管理播放器修复；语音+文字一起发送
  * v3.20 — Gutenberg 区块 useBlockProps 修复，点击区块可选中/可拖拽
  * v3.19 — 修复 Gutenberg 区块无法选中的问题（添加 useBlockProps）
  * v3.18 — 古腾堡区块预加载优化，修复首次播放无声音问题
@@ -504,7 +505,7 @@
             const textarea = form ? form.querySelector('textarea[name="comment"], #comment') : null;
             if (!textarea) return;
 
-            const placeholder = `🎤 语音消息`;
+            const placeholder = '#语音消息';
             const current = textarea.value.trim();
             if (current) {
                 textarea.value = current + '\n' + placeholder;
@@ -519,7 +520,7 @@
             const textarea = form ? form.querySelector('textarea[name="comment"], #comment') : null;
             if (!textarea) return;
 
-            const placeholder = '🎤 语音消息';
+            const placeholder = '#语音消息';
             textarea.value = textarea.value.replace(placeholder, '').replace(/^\s*[\r\n]+/gm, '').trim();
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
@@ -547,16 +548,21 @@
 
         init() {
             const wrappers = document.querySelectorAll('.voice-comment-wrapper');
-            if (wrappers.length === 0) return;
-
+            
+            // 初始化录音按钮实例（前台评论区）
             wrappers.forEach(wrapper => {
                 const instance = new VoiceAppInstance(wrapper);
                 instance.init();
                 this.instances.push(instance);
             });
 
+            // 初始化播放器（前台 + 后台评论管理页面）
             this.initArticlePlayers();
-            this.watchCommentList();
+            
+            // 监控评论列表变化（仅前台）
+            if (wrappers.length > 0) {
+                this.watchCommentList();
+            }
         },
 
         // 解锁浏览器 AudioContext（Safari/移动端可能被挂起）

@@ -3,7 +3,7 @@
  * Plugin Name: WP语音消息
  * Plugin URI: https://hjyl.org/wp-voice-messages/
  * Description: 为 WordPress 评论和文章添加微信风格的语音消息功能。支持按住说话、自动上传、波形播放。
- * Version: 3.23
+ * Version: 3.25
  * Author: HJYL
  * Author URI: https://hjyl.org
  * Text Domain: voice-messages
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('VOICE_PLUGIN_VERSION', '3.23');
+define('VOICE_PLUGIN_VERSION', '3.25');
 define('VOICE_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('VOICE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
@@ -737,6 +737,9 @@ final class Voice_Messages {
         }
 
         register_block_type('voice-messages/voice-block', array(
+            'supports' => array(
+                'align' => true,
+            ),
             'attributes' => array(
                 'url' => array(
                     'type' => 'string',

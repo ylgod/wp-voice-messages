@@ -18,6 +18,11 @@
     border-radius: 0;
 }
 
+.voice-block-editor.aligncenter {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* 录音中 */
 .voice-block-recording {
     text-align: center;

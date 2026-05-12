@@ -389,8 +389,7 @@
 
         // 上传中
         if (recorderState === 'uploading') {
-            var uploadProps = useBlockProps({ className: 'voice-block-editor voice-block-uploading' });
-            return el('div', uploadProps,
+            return el('div', blockProps,
                 el('div', { className: 'voice-block-spinner' }),
                 el('p', null, '上传中...')
             );
@@ -398,8 +397,7 @@
 
         // 录音中
         if (recorderState === STATE_RECORDING) {
-            var recordingProps = useBlockProps({ className: 'voice-block-editor voice-block-recording' });
-            return el('div', recordingProps,
+            return el('div', blockProps,
                 el('div', { className: 'voice-block-record-area' },
                     el('div', { className: 'voice-block-mic recording-pulse' }, micIcon),
                     el('div', { className: 'voice-block-timer' }, timerDisplay),
@@ -422,8 +420,7 @@
                 }));
             }
 
-            var previewProps = useBlockProps({ className: 'voice-block-editor voice-block-preview' });
-            return el('div', previewProps,
+            return el('div', blockProps,
                 el('div', { className: 'voice-block-preview-inner' },
                     el('div', {
                         className: 'voice-block-preview-player' + (previewPlayingState ? ' playing' : ''),
@@ -467,8 +464,7 @@
         }
 
         // 空闲：显示录音按钮
-        var defaultProps = useBlockProps({ className: 'voice-block-editor', style: { width: '100%' } });
-        return el('div', defaultProps,
+        return el('div', { ...blockProps, style: { width: '100%' } },
             el(Placeholder, {
                 icon: micIcon,
                 label: __('语音消息', 'voice-messages'),
